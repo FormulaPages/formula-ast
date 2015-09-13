@@ -1,0 +1,15 @@
+{
+  "name": "formula-ast",
+  "version": "1.0.0",
+  "description": "Parse spreadsheet formula to abstract syntax tree.",
+  "main": "formulaParser.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "spreadsheet",
+    "formula"
+  ],
+  "author": "Peter W Moresi",
+  "license": "GPL-3.0"
+}

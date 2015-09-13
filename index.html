@@ -1,0 +1,1010 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>Formula Parser</title>
+<!-- 2015-09-12 Sat 21:30 -->
+<meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta  name="generator" content="Org-mode" />
+<meta  name="author" content="Peter W Moresi" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  pre.src-sh:before    { content: 'sh'; }
+  pre.src-bash:before  { content: 'sh'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-R:before     { content: 'R'; }
+  pre.src-perl:before  { content: 'Perl'; }
+  pre.src-java:before  { content: 'Java'; }
+  pre.src-sql:before   { content: 'SQL'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.right  { text-align: center;  }
+  th.left   { text-align: center;   }
+  th.center { text-align: center; }
+  td.right  { text-align: right;  }
+  td.left   { text-align: left;   }
+  td.center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara:nth-child(2) { display: inline; }
+  .footpara { display: block; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="http://orgmode.org/worg/style/worg.css" />
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2013 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+<script type="text/javascript" src="http://orgmode.org/mathjax/MathJax.js"></script>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+    MathJax.Hub.Config({
+        // Only one of the two following lines, depending on user settings
+        // First allows browser-native MathML display, second forces HTML/CSS
+        //  config: ["MMLorHTML.js"], jax: ["input/TeX"],
+            jax: ["input/TeX", "output/HTML-CSS"],
+        extensions: ["tex2jax.js","TeX/AMSmath.js","TeX/AMSsymbols.js",
+                     "TeX/noUndefined.js"],
+        tex2jax: {
+            inlineMath: [ ["\\(","\\)"] ],
+            displayMath: [ ['$$','$$'], ["\\[","\\]"], ["\\begin{displaymath}","\\end{displaymath}"] ],
+            skipTags: ["script","noscript","style","textarea","pre","code"],
+            ignoreClass: "tex2jax_ignore",
+            processEscapes: false,
+            processEnvironments: true,
+            preview: "TeX"
+        },
+        showProcessingMessages: true,
+        displayAlign: "center",
+        displayIndent: "2em",
+
+        "HTML-CSS": {
+             scale: 100,
+             availableFonts: ["STIX","TeX"],
+             preferredFont: "TeX",
+             webFont: "TeX",
+             imageFont: "TeX",
+             showMathMenu: true,
+        },
+        MMLorHTML: {
+             prefer: {
+                 MSIE:    "MML",
+                 Firefox: "MML",
+                 Opera:   "HTML",
+                 other:   "HTML"
+             }
+        }
+    });
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">Formula Parser</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1. Usage</a></li>
+<li><a href="#sec-2">2. Syntax</a>
+<ul>
+<li><a href="#sec-2-1">2.1. Constants</a></li>
+<li><a href="#sec-2-2">2.2. Prefix Operators</a></li>
+<li><a href="#sec-2-3">2.3. Inflix Operators</a></li>
+<li><a href="#sec-2-4">2.4. Postfix Operators</a></li>
+<li><a href="#sec-2-5">2.5. Matchfix Operators</a></li>
+<li><a href="#sec-2-6">2.6. Operator Precedence</a></li>
+<li><a href="#sec-2-7">2.7. Change Order with Grouping</a></li>
+<li><a href="#sec-2-8">2.8. Calculation Errors</a></li>
+</ul>
+</li>
+<li><a href="#sec-3">3. Node Types / Subtypes</a></li>
+<li><a href="#sec-4">4. Formula Grammar</a></li>
+</ul>
+</div>
+</div>
+<p>
+JavaScript parser for spreadsheet formula to geneate abstract syntax tree (AST).
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-js"><span style="color: #0000FF;">var</span> <span style="color: #BA36A5;">parser</span> = require(<span style="color: #008000;">'formula-ast'</span>);
+parser.parse(<span style="color: #008000;">'IF(TRUE, "It works", "It is broke")'</span>);
+</pre>
+</div>
+
+<div id="outline-container-sec-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> Usage</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+For the brower:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-html">&lt;<span style="color: #006699;">script</span> <span style="color: #BA36A5;">src</span>=<span style="color: #008000;">"dist/formulaParser.js"</span>&gt;&lt;/<span style="color: #006699;">script</span>&gt;
+</pre>
+</div>
+
+<div class="org-src-container">
+
+<pre class="src src-js">parser.parse(<span style="color: #008000;">'IF(TRUE, "Yes", "No")'</span>);
+</pre>
+</div>
+
+<p>
+If you use node, webpack or browserify:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-sh">npm install formula-ast
+</pre>
+</div>
+
+<div class="org-src-container">
+
+<pre class="src src-js"><span style="color: #0000FF;">var</span> <span style="color: #BA36A5;">parser</span> = require(<span style="color: #008000;">'formula-ast);</span>
+<span style="color: #008000;">parser.parse('</span>IF(TRUE, <span style="color: #008000;">"Yes"</span>, <span style="color: #008000;">"No"</span>)<span style="color: #008000;">');</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-sec-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> Syntax</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+The formulas use the same syntax and functions found in most spreadsheet software. 
+</p>
+</div>
+
+<div id="outline-container-sec-2-1" class="outline-3">
+<h3 id="sec-2-1"><span class="section-number-3">2.1</span> Constants</h3>
+<div class="outline-text-3" id="text-2-1">
+<ul class="org-ul">
+<li>TRUE
+</li>
+<li>FALSE
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-sec-2-2" class="outline-3">
+<h3 id="sec-2-2"><span class="section-number-3">2.2</span> Prefix Operators</h3>
+<div class="outline-text-3" id="text-2-2">
+<p>
+A prefix operator is immediately to the left of the operand.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="left" />
+
+<col  class="left" />
+
+<col  class="left" />
+
+<col  class="left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="left">operator</th>
+<th scope="col" class="left">Token Name</th>
+<th scope="col" class="left">Operation Performed</th>
+<th scope="col" class="left">Supported</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="left">-</td>
+<td class="left">prefix-minus</td>
+<td class="left">Negates operand; converts positive to negative and vice versa</td>
+<td class="left">Yes</td>
+</tr>
+
+<tr>
+<td class="left">+</td>
+<td class="left">prefix-plus</td>
+<td class="left">Converts operand to number</td>
+<td class="left">Yes</td>
+</tr>
+
+<tr>
+<td class="left">$</td>
+<td class="left">&#xa0;</td>
+<td class="left">Next component of an A1 reference is absolute</td>
+<td class="left">No / Ignores</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div id="outline-container-sec-2-3" class="outline-3">
+<h3 id="sec-2-3"><span class="section-number-3">2.3</span> Inflix Operators</h3>
+<div class="outline-text-3" id="text-2-3">
+<p>
+An inflix operator is between two operands. The operands are called the rhs and lhs for right hand side and left hand side, respectively.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="left" />
+
+<col  class="left" />
+
+<col  class="left" />
+
+<col  class="left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="left">Operator</th>
+<th scope="col" class="left">Token Name</th>
+<th scope="col" class="left">Operation Performed</th>
+<th scope="col" class="left">Supported</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="left">+</td>
+<td class="left">infix-plus</td>
+<td class="left">addition</td>
+<td class="left">Yes</td>
+</tr>
+
+<tr>
+<td class="left">-</td>
+<td class="left">infix-minus</td>
+<td class="left">subtraction</td>
+<td class="left">Yes</td>
+</tr>
+
+<tr>
+<td class="left">*</td>
+<td class="left">infix-multiply</td>
+<td class="left">multiplication</td>
+<td class="left">Yes</td>
+</tr>
+
+<tr>
+<td class="left">^</td>
+<td class="left">infix-power</td>
+<td class="left">exponentiation</td>
+<td class="left">Yes</td>
+</tr>
+
+<tr>
+<td class="left">=</td>
+<td class="left">infix-eq</td>
+<td class="left">is equal to</td>
+<td class="left">Yes</td>
+</tr>
+
+<tr>
+<td class="left">&lt;&gt;</td>
+<td class="left">infix-ne</td>
+<td class="left">is not equal to</td>
+<td class="left">Yes</td>
+</tr>
+
+<tr>
+<td class="left">&gt;</td>
+<td class="left">infix-gt</td>
+<td class="left">is greater than</td>
+<td class="left">Yes</td>
+</tr>
+
+<tr>
+<td class="left">&lt;</td>
+<td class="left">infix-lt</td>
+<td class="left">is less than</td>
+<td class="left">Yes</td>
+</tr>
+
+<tr>
+<td class="left">&gt;=</td>
+<td class="left">infix-gte</td>
+<td class="left">is greater than or equal to</td>
+<td class="left">Yes</td>
+</tr>
+
+<tr>
+<td class="left">&lt;=</td>
+<td class="left">infix-lte</td>
+<td class="left">is less than or equal to</td>
+<td class="left">Yes</td>
+</tr>
+
+<tr>
+<td class="left">&amp;</td>
+<td class="left">infix-concat</td>
+<td class="left">concatentation of strings</td>
+<td class="left">Yes</td>
+</tr>
+
+<tr>
+<td class="left">\w</td>
+<td class="left">&#xa0;</td>
+<td class="left">reference intersection</td>
+<td class="left">No</td>
+</tr>
+
+<tr>
+<td class="left">,</td>
+<td class="left">&#xa0;</td>
+<td class="left">reference union</td>
+<td class="left">Yes</td>
+</tr>
+
+<tr>
+<td class="left">:</td>
+<td class="left">&#xa0;</td>
+<td class="left">reference range</td>
+<td class="left">Yes</td>
+</tr>
+
+<tr>
+<td class="left">!</td>
+<td class="left">&#xa0;</td>
+<td class="left">separate worksheet from reference</td>
+<td class="left">Yes</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div id="outline-container-sec-2-4" class="outline-3">
+<h3 id="sec-2-4"><span class="section-number-3">2.4</span> Postfix Operators</h3>
+<div class="outline-text-3" id="text-2-4">
+<p>
+A postfix operator is immediate to the right side of the operand.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="left" />
+
+<col  class="left" />
+
+<col  class="left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="left">Operator</th>
+<th scope="col" class="left">Operation</th>
+<th scope="col" class="left">Supported</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="left">%</td>
+<td class="left">Divides operand by 100</td>
+<td class="left">Yes</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div id="outline-container-sec-2-5" class="outline-3">
+<h3 id="sec-2-5"><span class="section-number-3">2.5</span> Matchfix Operators</h3>
+<div class="outline-text-3" id="text-2-5">
+<p>
+A matchfix operator specifies the start and end of a logical grouping.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="left" />
+
+<col  class="left" />
+
+<col  class="left" />
+
+<col  class="left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="left">Supported</th>
+<th scope="col" class="left">left</th>
+<th scope="col" class="left">right</th>
+<th scope="col" class="left">Operation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="left">Yes</td>
+<td class="left">"</td>
+<td class="left">"</td>
+<td class="left">string constant</td>
+</tr>
+
+<tr>
+<td class="left">Yes</td>
+<td class="left">{</td>
+<td class="left">}</td>
+<td class="left">array constant</td>
+</tr>
+
+<tr>
+<td class="left">Yes</td>
+<td class="left">(</td>
+<td class="left">)</td>
+<td class="left">arithmetic grouping or function arguments or reference grouping</td>
+</tr>
+
+<tr>
+<td class="left">Yes</td>
+<td class="left">'</td>
+<td class="left">'</td>
+<td class="left">grouping worksheet name</td>
+</tr>
+
+<tr>
+<td class="left">No</td>
+<td class="left">[</td>
+<td class="left">]</td>
+<td class="left">grouping workbook name (external reference)</td>
+</tr>
+
+<tr>
+<td class="left">No</td>
+<td class="left">[</td>
+<td class="left">]</td>
+<td class="left">Relative reference in R1C1 style</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div id="outline-container-sec-2-6" class="outline-3">
+<h3 id="sec-2-6"><span class="section-number-3">2.6</span> Operator Precedence</h3>
+<div class="outline-text-3" id="text-2-6">
+<p>
+If you combine several different operators into the same formula then the operations
+are based on the precedence of each operator.
+</p>
+
+<p>
+This table describe the order in which the operation are performed with the operations
+performed first on the top.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="left" />
+
+<col  class="left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="left">Operator</th>
+<th scope="col" class="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="left">-</td>
+<td class="left">Negation (as in –1)</td>
+</tr>
+
+<tr>
+<td class="left">%</td>
+<td class="left">Percent</td>
+</tr>
+
+<tr>
+<td class="left">^</td>
+<td class="left">Power Function</td>
+</tr>
+
+<tr>
+<td class="left">* and /</td>
+<td class="left">Multiply and Divide</td>
+</tr>
+
+<tr>
+<td class="left">+ and -</td>
+<td class="left">Add and Subtract</td>
+</tr>
+
+<tr>
+<td class="left">&amp;</td>
+<td class="left">Combine two strings</td>
+</tr>
+
+<tr>
+<td class="left">&lt; and &gt; and &lt;=  and &gt;= and &lt;&gt;</td>
+<td class="left">Comparision</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div id="outline-container-sec-2-7" class="outline-3">
+<h3 id="sec-2-7"><span class="section-number-3">2.7</span> Change Order with Grouping</h3>
+<div class="outline-text-3" id="text-2-7">
+<p>
+Parentheses can be used to change the order in which operation are performed. For example,
+the formula below results in 15. 5*2 is multipled to result in 10. The result is then added
+to 5.
+</p>
+
+<pre class="example">
+=5+5*2
+</pre>
+
+<p>
+To override the default order you can group together expression. For example below the formula
+results in 20 because 5+5 is added together and multipled by 2.
+</p>
+
+<pre class="example">
+=(5+5)*2
+</pre>
+</div>
+</div>
+
+<div id="outline-container-sec-2-8" class="outline-3">
+<h3 id="sec-2-8"><span class="section-number-3">2.8</span> Calculation Errors</h3>
+<div class="outline-text-3" id="text-2-8">
+<p>
+The calculation errors categorize problem found in formulas.
+</p>
+
+<p>
+The errors supported by the system are:
+</p>
+
+<table id="ErrorTypes" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="left" />
+
+<col  class="left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="left">code</th>
+<th scope="col" class="left">text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="left">nil</td>
+<td class="left">#NULL!</td>
+</tr>
+
+<tr>
+<td class="left">div0</td>
+<td class="left">#DIV/0!</td>
+</tr>
+
+<tr>
+<td class="left">value</td>
+<td class="left">#VALUE?</td>
+</tr>
+
+<tr>
+<td class="left">ref</td>
+<td class="left">#REF!</td>
+</tr>
+
+<tr>
+<td class="left">name</td>
+<td class="left">#NAME?</td>
+</tr>
+
+<tr>
+<td class="left">num</td>
+<td class="left">@NUM!</td>
+</tr>
+
+<tr>
+<td class="left">na</td>
+<td class="left">#N/A</td>
+</tr>
+
+<tr>
+<td class="left">error</td>
+<td class="left">#ERROR!</td>
+</tr>
+
+<tr>
+<td class="left">data</td>
+<td class="left">#GETTING<sub>DATA</sub></td>
+</tr>
+
+<tr>
+<td class="left">missing</td>
+<td class="left">#MISSING</td>
+</tr>
+
+<tr>
+<td class="left">unknown</td>
+<td class="left">#UNKNOWN</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+<div id="outline-container-sec-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> Node Types / Subtypes</h2>
+<div class="outline-text-2" id="text-3">
+<ol class="org-ol">
+<li>value
+<ol class="org-ol">
+<li>boolean
+</li>
+<li>number
+</li>
+<li>string
+</li>
+<li>variable
+</li>
+<li>array
+</li>
+</ol>
+</li>
+<li>cell
+<ol class="org-ol">
+<li>local
+</li>
+<li>remote
+</li>
+<li>remote-named
+</li>
+</ol>
+</li>
+<li>operator
+<ol class="org-ol">
+<li>infix-add
+</li>
+<li>infix-concat
+</li>
+<li>infix-divide
+</li>
+<li>infix-gt
+</li>
+<li>infix-gte
+</li>
+<li>infix-multiply
+</li>
+<li>infix-ne
+</li>
+<li>infix-eq
+</li>
+<li>infix-lt
+</li>
+<li>infix-lte
+</li>
+<li>infix-power
+</li>
+<li>infix-subtract
+</li>
+<li>prefix-plus
+</li>
+<li>prefix-minus
+</li>
+</ol>
+</li>
+<li>function
+</li>
+<li>group
+</li>
+<li>range
+</li>
+<li>cell
+<ol class="org-ol">
+<li>local
+</li>
+<li>remote
+</li>
+</ol>
+</li>
+</ol>
+</div>
+</div>
+
+<div id="outline-container-sec-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> Formula Grammar</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+The grammar is BNF compile by <a href="http://zaach.github.io/jison/">jison</a> into the parser.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-jison">/* description: Parses end executes spreadsheet formula expressions. */
+
+/* lexical grammar */
+%lex
+
+alpha                       [a-zA-Z]
+digit                       [0-9]
+esc                         "\""
+int                         "-"?(?:[0-9]|[1-9][0-9]+)
+exp                         (?:[eE][-+]?[0-9]+)
+frac                        (?:\.[0-9]+)
+
+%%
+
+\s+                   /* skip whitespace */
+[0-9]+("."[0-9]+)?\b  return 'NUMBER'
+"TRUE"                return 'TRUE'
+"FALSE"               return 'FALSE'
+"*"                   return '*'
+"/"                   return '/'
+"-"                   return '-'
+"+"                   return '+'
+"&amp;"                   return '&amp;'
+"^"                   return '^'
+"("                   return '('
+")"                   return ')'
+"&gt;="                  return "&gt;="
+"&lt;="                  return "&lt;="
+"&lt;&gt;"                  return "&lt;&gt;"
+"="                   return "="
+"&gt;"                   return "&gt;"
+"&lt;"                   return "&lt;"
+"{"                   return "{"
+"}"                   return "}"
+"!"                   return "!"
+","                   return ","
+":"                   return ":"
+";"                   return ";"
+"%"                   return "%"
+[A-Za-z](?=[(])                    {return 'FUNC';}
+[A-Za-z][A-Za-z0-9\.]+(?=[(])                    {return 'FUNC';}
+\$\'(?:\'\'|[^'])*\'\!    yytext = yytext.substr(2,yyleng-3).replace(/\"\"/g, "\""); return "SHEET";
+\'(?:\'\'|[^'])*\'\!    yytext = yytext.substr(1,yyleng-3).replace(/\"\"/g, "\""); return "SHEET";
+[a-zA-Z]([a-zA-Z0-9.$]+)?\!  yytext = yytext.slice(0, -1); return "SHEET"
+\$([a-zA-Z])([a-zA-Z0-9.$]+)?\!  yytext = yytext.slice(1, -1); return "SHEET"
+\$?([a-zA-Z]+)\$?([0-9]+)                              return "CELL";
+\"(?:\"\"|[^"])*\"    yytext = yytext.substr(1,yyleng-2).replace(/\"\"/g, "\""); return "STRING";
+[a-zA-Z]([a-zA-Z0-9.$^\(]+)?  return 'IDENT'
+&lt;&lt;EOF&gt;&gt;               return 'EOF'
+.                     return 'INVALID'
+
+/lex
+
+/* operator associations and precedence */
+%left '=' '&gt;=' '&lt;=' '&gt;' '&lt;' '&lt;&gt;'
+%left '&amp;'
+%left '+' '-'
+%left '*' '/'
+%left '^'
+%left ':'
+%left UMINUS
+
+%right '%'
+
+
+%start expressions
+
+%% /* language grammar */
+
+expressions
+: e EOF
+    { return $1; }
+| '=' e EOF
+    { return $2; }
+;
+
+  e          
+: e '+' e
+    {$$ = { type: "operator", subtype: 'infix-add', operands:[$1, $3]}; }
+| e '-' e
+    {$$ = { type: "operator", subtype: 'infix-subtract', operands:[$1, $3]}; }
+| e '*' e
+    {$$ = { type: "operator", subtype: 'infix-multiply', operands:[$1, $3]}; }
+| e '/' e
+    {$$ = { type: "operator", subtype: 'infix-divide', operands:[$1, $3] }; }
+| e '^' e
+    {$$ = { type: "operator", subtype: 'infix-power', operands:[$1, $3] }; }
+| e '&lt;&gt;' e
+    {$$ = { type: "operator", subtype: 'infix-ne', operands:[$1, $3] }; }
+| e '=' e
+    {$$ = { type: "operator", subtype: 'infix-eq', operands:[$1, $3] }; }
+| e '&gt;' e
+    {$$ = { type: "operator", subtype: 'infix-gt', operands:[$1, $3] }; }
+| e '&lt;' e
+    {$$ = { type: "operator", subtype: 'infix-lt', operands:[$1, $3] }; }
+| e '&gt;=' e
+    {$$ = { type: "operator", subtype: 'infix-gte', operands:[$1, $3] }; }
+| e '&lt;=' e
+    {$$ = { type: "operator", subtype: 'infix-lte', operands:[$1, $3] }; }
+      | '+' e
+    {$$ = { type: "operator", subtype: 'prefix-plus', operands:[$2] }; }
+| e '&amp;' e
+    {$$ = { type: "operator", subtype: 'infix-concat', operands:[$1, $3] }; }
+| func '&amp;' e
+    {$$ = { type: "operator", subtype: 'infix-concat', operands:[$1, $3] }; } 
+| '-' e %prec UMINUS
+    {$$ = { type: "operator", subtype: 'prefix-minus', operands:[$2] }; }
+| '(' e ')'
+    {$$ = { type: 'group', exp:$2 }; }
+| e ':' e
+    {$$ = { type: 'range', subtype: 'local', topLeft:$1, bottomRight:$3 }; }
+| CELL
+    {$$ = { type: 'cell', subtype: 'local', addr:$1 }; }
+| SHEET CELL
+    { $$ = { type: 'cell', subtype: 'remote', worksheet: $1, addr:$2 }; }
+| IDENT
+    { $$ = { type: 'value', subtype: 'variable', value:$1 }; }
+| SHEET IDENT
+    { $$ = { type: 'cell', subtype: 'remote-named', worksheet: $1, addr:$2 }; }
+| func
+    { $$ = $1; }
+| array_literal
+    { $$ = $1; }         
+| TRUE
+    {$$ = { type: 'value', subtype: 'boolean', value: true }; }
+| FALSE
+    {$$ = { type: 'value', subtype: 'boolean', value: false }; }
+| STRING
+    {$$ = { type: 'value', subtype: 'string', value:String(yytext)}; }
+| NUMBER '%'
+    {$$ = { type: 'value', subtype: 'number', value:$1/100 }; }
+      | NUMBER
+    {$$ = { type: 'value', subtype: 'number', value:Number(yytext) }; }
+;
+
+
+range
+   : e ':' e
+   ;
+
+  param_list
+:  e
+    { $$ = [$1]; }
+| param_list ',' e
+    { $$ = $1.concat([$3]); } 
+| param_list ';' param_list
+    { $$ = ($3[0].subtype !== 'array') ? [{ type: 'value', subtype: 'array', items:$1 }, { type: 'value', subtype: 'array', items:$3 }] : [{ type: 'value', subtype: 'array', items:$1 }].concat($3); } 
+;
+
+  func
+      : FUNC '(' param_list ')'
+    { $$ = { type: 'function', name: $1, args:$3 }; }
+| FUNC '(' ')'
+    { $$ = { type: 'function', name: $1, args:[] }; }
+;
+
+  array_literal
+: '{' param_list '}'
+    { $$ = { type: 'value', subtype: 'array', items:$2 }; }
+;
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Peter W Moresi</p>
+<p class="date">Created: 2015-09-12 Sat 21:30</p>
+<p class="creator"><a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.5.4 (<a href="http://orgmode.org">Org</a> mode 8.2.10)</p>
+<p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>

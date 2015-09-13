@@ -1,0 +1,408 @@
+#+TITLE: Formula Parser
+#+AUTHOR: Peter W Moresi
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="http://orgmode.org/worg/style/worg.css" />
+
+JavaScript parser for spreadsheet formula to geneate abstract syntax tree (AST).
+
+#+BEGIN_SRC js
+  var parser = require('formula-ast');
+  parser.parse('IF(TRUE, "It works", "It is broke")');
+#+END_SRC
+
+* Usage
+
+  For the brower:
+
+  #+BEGIN_SRC html
+  <script src="dist/formulaParser.js"></script>
+  #+END_SRC
+
+  #+BEGIN_SRC js
+    parser.parse('IF(TRUE, "Yes", "No")');
+  #+END_SRC
+
+  If you use node, webpack or browserify:
+
+  #+BEGIN_SRC sh
+    npm install formula-ast
+  #+END_SRC
+
+  #+BEGIN_SRC js
+    var parser = require('formula-ast);
+    parser.parse('IF(TRUE, "Yes", "No")');
+  #+END_SRC
+
+* Syntax
+  
+  The formulas use the same syntax and functions found in most spreadsheet software. 
+
+** Technical Notes						   :noexport:
+
+  Under the covers the formulas are compiled to JavaScript which depend on functions loaded
+  on the page. The library looks for functions in the workbook.fn namespace and if not found then
+  in the root object (e.g. window).
+  
+** Constants
+   
+   - TRUE
+   - FALSE
+     
+** Prefix Operators
+   
+   A prefix operator is immediately to the left of the operand.
+   
+   |----------+--------------+---------------------------------------------------------------+--------------|
+   | operator | Token Name   | Operation Performed                                           | Supported    |
+   |----------+--------------+---------------------------------------------------------------+--------------|
+   | -        | prefix-minus | Negates operand; converts positive to negative and vice versa | Yes          |
+   | +        | prefix-plus  | Converts operand to number                                    | Yes          |
+   | $        |              | Next component of an A1 reference is absolute                 | No / Ignores |
+   |----------+--------------+---------------------------------------------------------------+--------------|
+   
+** Inflix Operators
+   
+   An inflix operator is between two operands. The operands are called the rhs and lhs for right hand side and left hand side, respectively.
+   
+   |----------+----------------+-----------------------------------+-----------|
+   | Operator | Token Name     | Operation Performed               | Supported |
+   |----------+----------------+-----------------------------------+-----------|
+   | +        | infix-plus     | addition                          | Yes       |
+   | -        | infix-minus    | subtraction                       | Yes       |
+   | *        | infix-multiply | multiplication                    | Yes       |
+   | ^        | infix-power    | exponentiation                    | Yes       |
+   | =        | infix-eq       | is equal to                       | Yes       |
+   | <>       | infix-ne       | is not equal to                   | Yes       |
+   | >        | infix-gt       | is greater than                   | Yes       |
+   | <        | infix-lt       | is less than                      | Yes       |
+   | >=       | infix-gte      | is greater than or equal to       | Yes       |
+   | <=       | infix-lte      | is less than or equal to          | Yes       |
+   | &        | infix-concat   | concatentation of strings         | Yes       |
+   | \w       |                | reference intersection            | No        |
+   | ,        |                | reference union                   | Yes       |
+   | :        |                | reference range                   | Yes       |
+   | !        |                | separate worksheet from reference | Yes       |
+   |----------+----------------+-----------------------------------+-----------|
+   
+** Postfix Operators
+   
+   A postfix operator is immediate to the right side of the operand.
+   
+   |----------+------------------------+-----------|
+   | Operator | Operation              | Supported |
+   |----------+------------------------+-----------|
+   | %        | Divides operand by 100 | Yes       |
+   |----------+------------------------+-----------|
+   
+** Matchfix Operators
+   
+   A matchfix operator specifies the start and end of a logical grouping.
+   
+   |-----------+------+-------+-----------------------------------------------------------------|
+   | Supported | left | right | Operation                                                       |
+   |-----------+------+-------+-----------------------------------------------------------------|
+   | Yes       | "    | "     | string constant                                                 |
+   | Yes       | {    | }     | array constant                                                  |
+   | Yes       | (    | )     | arithmetic grouping or function arguments or reference grouping |
+   | Yes       | '    | '     | grouping worksheet name                                         |
+   | No        | [    | ]     | grouping workbook name (external reference)                     |
+   | No        | [    | ]     | Relative reference in R1C1 style                                |
+   |-----------+------+-------+-----------------------------------------------------------------|
+   
+** Operator Precedence
+   
+   If you combine several different operators into the same formula then the operations
+   are based on the precedence of each operator.
+   
+   This table describe the order in which the operation are performed with the operations
+   performed first on the top.
+   
+   |-------------------------------+---------------------|
+   | Operator                      | Description         |
+   |-------------------------------+---------------------|
+   | -                             | Negation (as in –1) |
+   | %                             | Percent             |
+   | ^                             | Power Function      |
+   | * and /                       | Multiply and Divide |
+   | + and -                       | Add and Subtract    |
+   | &                             | Combine two strings |
+   | < and > and <=  and >= and <> | Comparision         |
+   |-------------------------------+---------------------|
+   
+** Change Order with Grouping
+   
+   Parentheses can be used to change the order in which operation are performed. For example,
+   the formula below results in 15. 5*2 is multipled to result in 10. The result is then added
+   to 5.
+   
+   #+BEGIN_EXAMPLE
+     =5+5*2
+   #+END_EXAMPLE
+   
+   To override the default order you can group together expression. For example below the formula
+   results in 20 because 5+5 is added together and multipled by 2.
+   
+   #+BEGIN_EXAMPLE
+     =(5+5)*2   
+   #+END_EXAMPLE
+
+** Calculation Errors
+
+   The calculation errors categorize problem found in formulas.
+
+   The errors supported by the system are:
+   
+   #+NAME: ErrorTypes
+   |---------+---------------|
+   | code    | text          |
+   |---------+---------------|
+   | nil     | #NULL!        |
+   | div0    | #DIV/0!       |
+   | value   | #VALUE?       |
+   | ref     | #REF!         |
+   | name    | #NAME?        |
+   | num     | @NUM!         |
+   | na      | #N/A          |
+   | error   | #ERROR!       |
+   | data    | #GETTING_DATA |
+   | missing | #MISSING      |
+   | unknown | #UNKNOWN      |
+   |---------+---------------|
+
+   #+NAME: CalcErrors
+   #+Begin_src js :exports none
+     // Define the error system
+     var error = {};
+
+     function CalcError(message) {
+         this.message = message;
+     }
+
+     CalcError.prototype = new Error; 
+
+     CalcError.prototype.toString = function() {
+         return this.message;
+     }
+
+     error.nil = new CalcError('#NULL!');
+     error.div0 = new CalcError('#DIV/0!');
+     error.value = new CalcError('#VALUE?');
+     error.ref = new CalcError('#REF!');
+     error.name = new CalcError('#NAME?');
+     error.num = new CalcError('#NUM!');
+     error.na = new CalcError('#N/A');
+     error.error = new CalcError('#ERROR!');
+     error.data = new CalcError('#GETTING_DATA');
+     error.missing = new CalcError('#MISSING');
+     error.unknown = new CalcError('#UNKNOWN');
+
+   #+END_SRC
+    
+* Node Types / Subtypes
+  
+  1. value
+     1. boolean
+     2. number
+     3. string
+     4. variable
+     5. array
+  2. cell
+     1. local
+     2. remote
+     3. remote-named
+  3. operator
+     1. infix-add
+     2. infix-concat
+     3. infix-divide
+     4. infix-gt
+     5. infix-gte
+     6. infix-multiply
+     7. infix-ne
+     8. infix-eq
+     9. infix-lt
+     10. infix-lte
+     11. infix-power
+     12. infix-subtract
+     13. prefix-plus
+     14. prefix-minus
+  4. function
+  5. group
+  6. range
+  7. cell
+     1. local
+     2. remote
+
+* Formula Grammar
+
+  The grammar is BNF compile by [[http://zaach.github.io/jison/][jison]] into the parser.
+
+#+BEGIN_SRC jison :file formulaParser.js :cmdline "-m umd" :exports code :tangle formulaParser.jison
+
+  /* description: Parses end executes spreadsheet formula expressions. */
+
+  /* lexical grammar */
+  %lex
+
+  alpha                       [a-zA-Z]
+  digit                       [0-9]
+  esc                         "\""
+  int                         "-"?(?:[0-9]|[1-9][0-9]+)
+  exp                         (?:[eE][-+]?[0-9]+)
+  frac                        (?:\.[0-9]+)
+
+  %%
+
+  \s+                   /* skip whitespace */
+  [0-9]+("."[0-9]+)?\b  return 'NUMBER'
+  "TRUE"                return 'TRUE'
+  "FALSE"               return 'FALSE'
+  "*"                   return '*'
+  "/"                   return '/'
+  "-"                   return '-'
+  "+"                   return '+'
+  "&"                   return '&'
+  "^"                   return '^'
+  "("                   return '('
+  ")"                   return ')'
+  ">="                  return ">="
+  "<="                  return "<="
+  "<>"                  return "<>"
+  "="                   return "="
+  ">"                   return ">"
+  "<"                   return "<"
+  "{"                   return "{"
+  "}"                   return "}"
+  "!"                   return "!"
+  ","                   return ","
+  ":"                   return ":"
+  ";"                   return ";"
+  "%"                   return "%"
+  [A-Za-z](?=[(])                    {return 'FUNC';}
+  [A-Za-z][A-Za-z0-9\.]+(?=[(])                    {return 'FUNC';}
+  \$\'(?:\'\'|[^'])*\'\!    yytext = yytext.substr(2,yyleng-3).replace(/\"\"/g, "\""); return "SHEET";
+  \'(?:\'\'|[^'])*\'\!    yytext = yytext.substr(1,yyleng-3).replace(/\"\"/g, "\""); return "SHEET";
+  [a-zA-Z]([a-zA-Z0-9.$]+)?\!  yytext = yytext.slice(0, -1); return "SHEET"
+  \$([a-zA-Z])([a-zA-Z0-9.$]+)?\!  yytext = yytext.slice(1, -1); return "SHEET"
+  \$?([a-zA-Z]+)\$?([0-9]+)                              return "CELL";
+  \"(?:\"\"|[^"])*\"    yytext = yytext.substr(1,yyleng-2).replace(/\"\"/g, "\""); return "STRING";
+  [a-zA-Z]([a-zA-Z0-9.$^\(]+)?  return 'IDENT'
+  <<EOF>>               return 'EOF'
+  .                     return 'INVALID'
+
+  /lex
+
+  /* operator associations and precedence */
+  %left '=' '>=' '<=' '>' '<' '<>'
+  %left '&'
+  %left '+' '-'
+  %left '*' '/'
+  %left '^'
+  %left ':'
+  %left UMINUS
+
+  %right '%'
+
+
+  %start expressions
+
+  %% /* language grammar */
+
+  expressions
+  : e EOF
+      { return $1; }
+  | '=' e EOF
+      { return $2; }
+  ;
+
+    e          
+  : e '+' e
+      {$$ = { type: "operator", subtype: 'infix-add', operands:[$1, $3]}; }
+  | e '-' e
+      {$$ = { type: "operator", subtype: 'infix-subtract', operands:[$1, $3]}; }
+  | e '*' e
+      {$$ = { type: "operator", subtype: 'infix-multiply', operands:[$1, $3]}; }
+  | e '/' e
+      {$$ = { type: "operator", subtype: 'infix-divide', operands:[$1, $3] }; }
+  | e '^' e
+      {$$ = { type: "operator", subtype: 'infix-power', operands:[$1, $3] }; }
+  | e '<>' e
+      {$$ = { type: "operator", subtype: 'infix-ne', operands:[$1, $3] }; }
+  | e '=' e
+      {$$ = { type: "operator", subtype: 'infix-eq', operands:[$1, $3] }; }
+  | e '>' e
+      {$$ = { type: "operator", subtype: 'infix-gt', operands:[$1, $3] }; }
+  | e '<' e
+      {$$ = { type: "operator", subtype: 'infix-lt', operands:[$1, $3] }; }
+  | e '>=' e
+      {$$ = { type: "operator", subtype: 'infix-gte', operands:[$1, $3] }; }
+  | e '<=' e
+      {$$ = { type: "operator", subtype: 'infix-lte', operands:[$1, $3] }; }
+        | '+' e
+      {$$ = { type: "operator", subtype: 'prefix-plus', operands:[$2] }; }
+  | e '&' e
+      {$$ = { type: "operator", subtype: 'infix-concat', operands:[$1, $3] }; }
+  | func '&' e
+      {$$ = { type: "operator", subtype: 'infix-concat', operands:[$1, $3] }; } 
+  | '-' e %prec UMINUS
+      {$$ = { type: "operator", subtype: 'prefix-minus', operands:[$2] }; }
+  | '(' e ')'
+      {$$ = { type: 'group', exp:$2 }; }
+  | e ':' e
+      {$$ = { type: 'range', subtype: 'local', topLeft:$1, bottomRight:$3 }; }
+  | CELL
+      {$$ = { type: 'cell', subtype: 'local', addr:$1 }; }
+  | SHEET CELL
+      { $$ = { type: 'cell', subtype: 'remote', worksheet: $1, addr:$2 }; }
+  | IDENT
+      { $$ = { type: 'value', subtype: 'variable', value:$1 }; }
+  | SHEET IDENT
+      { $$ = { type: 'cell', subtype: 'remote-named', worksheet: $1, addr:$2 }; }
+  | func
+      { $$ = $1; }
+  | array_literal
+      { $$ = $1; }         
+  | TRUE
+      {$$ = { type: 'value', subtype: 'boolean', value: true }; }
+  | FALSE
+      {$$ = { type: 'value', subtype: 'boolean', value: false }; }
+  | STRING
+      {$$ = { type: 'value', subtype: 'string', value:String(yytext)}; }
+  | NUMBER '%'
+      {$$ = { type: 'value', subtype: 'number', value:$1/100 }; }
+        | NUMBER
+      {$$ = { type: 'value', subtype: 'number', value:Number(yytext) }; }
+  ;
+
+
+  range
+     : e ':' e
+     ;
+
+    param_list
+  :  e
+      { $$ = [$1]; }
+  | param_list ',' e
+      { $$ = $1.concat([$3]); } 
+  | param_list ';' param_list
+      { $$ = ($3[0].subtype !== 'array') ? [{ type: 'value', subtype: 'array', items:$1 }, { type: 'value', subtype: 'array', items:$3 }] : [{ type: 'value', subtype: 'array', items:$1 }].concat($3); } 
+  ;
+
+    func
+        : FUNC '(' param_list ')'
+      { $$ = { type: 'function', name: $1, args:$3 }; }
+  | FUNC '(' ')'
+      { $$ = { type: 'function', name: $1, args:[] }; }
+  ;
+
+    array_literal
+  : '{' param_list '}'
+      { $$ = { type: 'value', subtype: 'array', items:$2 }; }
+  ;
+
+#+END_SRC
+
+#+RESULTS:
+[[file:formulaParser.js]]
+
+
+
+
