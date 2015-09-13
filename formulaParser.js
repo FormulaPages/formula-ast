@@ -762,6 +762,6 @@ if (typeof module !== 'undefined' && require.main === module) {
 }
 } else {
   if (window) {
-    formulaAst = { parser };
+    formulaAst = { parser: parser };
   }
 }
