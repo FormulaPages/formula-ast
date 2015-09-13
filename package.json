@@ -1,10 +1,10 @@
 {
   "name": "formula-ast",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Parse spreadsheet formula to abstract syntax tree.",
-  "main": "lib/formulaParser.js",
+  "main": "formulaParser.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha ./formulaParserTests.js"
   },
   "repository": {
     "type": "git",
