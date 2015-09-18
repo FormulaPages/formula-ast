@@ -1,15 +1,25 @@
 {
   "name": "formula-ast",
-    "version": "2.0.0",
+  "version": "2.0.3",
   "description": "Parse spreadsheet formula to abstract syntax tree.",
   "main": "formulaParser.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha ./formulaParserTests.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FormulaPages/formula-ast.git"
   },
   "keywords": [
     "spreadsheet",
     "formula"
   ],
   "author": "Peter W Moresi",
-  "license": "MIT"
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/FormulaPages/formula-ast/issues"
+  },
+  "homepage": "https://github.com/FormulaPages/formula-ast#readme",
+  "dependencies": {
+  }
 }

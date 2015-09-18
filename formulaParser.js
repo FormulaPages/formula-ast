@@ -745,7 +745,6 @@ Parser.prototype = parser;parser.Parser = Parser;
 return new Parser;
 })();
 
-
 if (typeof require !== 'undefined' && typeof exports !== 'undefined') {
 exports.parser = parser;
 exports.Parser = parser.Parser;
@@ -761,4 +760,8 @@ exports.main = function commonjsMain(args) {
 if (typeof module !== 'undefined' && require.main === module) {
   exports.main(process.argv.slice(1));
 }
+} else {
+  if (window) {
+    formulaAst = { parser: parser };
+  }
 }
